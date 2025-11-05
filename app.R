@@ -1,16 +1,20 @@
 # Load required libraries
 library(shiny)
 library(shinydashboard)
-library(DT)
-library(plotly)
+
+library(readr)
 library(dplyr)
+library(tidyr)
 library(lubridate)
+library(stringr)
+
 library(shinycssloaders)
 library(shinyWidgets)
-library(readr)
-library(stringr)
 library(htmltools)
+
 library(timevis)
+library(DT)
+library(plotly)
 
 Sys.setenv(LANG = "en")
 
@@ -85,32 +89,31 @@ get_hms_breaks <- function(y) {
 
 # Define UI
 ui <- dashboardPage(
-  dashboardHeader(title = "Pipeline Dashboard", titleWidth = 250),
+  dashboardHeader(title = "maestroUI", titleWidth = 250),
   
   dashboardSidebar(
     width = 250,
-    sidebarMenu(
+    sidebarMenu(id = "tabs",
       menuItem("Dashboard", tabName = "dashboard", icon = icon("tachometer-alt")),
-      menuItem("Pipeline Logs", tabName = "runs", icon = icon("book-open"))
+      menuItem("Pipeline Logs", tabName = "runs", icon = icon("book-open")),
+      menuItem("DAGs", tabName = "dags", icon = icon("diagram-project")),
+      menuItem("Schedule", tabName = "schedule", icon = icon("clock"))
     ),
     br(),
     # Filters
     h4("Filters", style = "margin-left: 15px; color: white;"),
     div(style = "margin: 15px;",
         radioButtons("tz", "Timezone", 
-                     choices = c("UTC","local")
+                     choices = c("UTC","Local")
                      ),
-        
-        selectInput("pipeline_filter", "Pipeline:",
+        pickerInput("pipeline_filter", "Pipeline:",
                    choices = NULL,
                    selected = NULL,
-                   multiple = TRUE,
-                   selectize = TRUE),
+                   multiple = TRUE),
         
-        selectInput("status_filter", "Status:",
-                   choices = list("Success" = "success", "Failed" = "failed", "Not Run" = "not_run"),
-                   multiple = TRUE,
-                   selected = c("success","failed")),
+        ##### Sélectionner les status = conditionnels (pour les not_run)
+        uiOutput("sidebar_inputs"),
+        ############
         
         dateRangeInput("date_filter", "Date Range:",
                       start = Sys.Date() - 7,
@@ -203,27 +206,22 @@ ui <- dashboardPage(
         
         
         fluidRow(
-          column(9,
-                 box(title = "Pipeline Execution timeline", 
+          column(12,
+                 box(title = "Last 10 Runs",
+                     status = "primary", 
+                     solidHeader = TRUE, 
+                     width = NULL,
+                     uiOutput("pipeline_cards")
+                 ),
+                 
+                 box(title = "Pipeline Timeline", 
                      status = "primary", 
                      solidHeader = TRUE, 
                      width = NULL,
                      withSpinner(timevis::timevisOutput("timeviz"))
                  )
-          ),
-          column(3,
-                 box(title = "Pipeline Status",
-                     status = "primary", 
-                     solidHeader = TRUE, 
-                     width = NULL,
-                     div(
-                       uiOutput("pipeline_cards"),
-                       style = "margin-bottom: 5px"
-                     )
-                 )
           )
         )
-        
       ),
       
       # Pipeline Runs tab
@@ -254,42 +252,74 @@ server <- function(input, output, session) {
   # Load and process data
   logs_data <- reactive({
     # Load the CSV file
-    logs <- read.csv("D:/R/Portfolio/maestro/maestro_gpt/logs.csv", stringsAsFactors = FALSE) %>%
-      # Logs encoded local Timezone
+    logs <- read.csv("logs.csv", stringsAsFactors = FALSE) %>%
+      # logs nativement en UTC
       mutate_at( 
         c("pipeline_started", "pipeline_ended", "next_run", "date_invoked"),
-        ~ as_datetime(., tz = "UTC")
+        ~ as_datetime(., "UTC")
       )  %>%
       mutate_at(
         c("pipeline_started", "pipeline_ended", "next_run", "date_invoked"),
-        ~ if(input$tz == "local") {
+        ~ if(input$tz == "Local") {
           with_tz(., tz = Sys.timezone()) # local tz
         } else {
-           . # stay UTC
+          . # stay UTC
         }
       )
     
     maestro <- read_delim(
-        "D:/R/Portfolio/maestro/maestro_gpt/maestro.log", 
+        "maestro.log", 
         delim = "]", 
-        col_names = c("pipe_name","type","date_invoked","output")
+        col_names = c("pipe_name","type","event_time","output")
     ) %>%
       mutate_all(~ str_squish(str_remove_all(., "\\[|\\:"))) %>%
-      # maestro.log encoded in Local TimeZone
-      mutate(date_invoked = str_remove_all(date_invoked, "\\..*"),
-             date_invoked = as_datetime(date_invoked, tz = "UTC"),
-             date_invoked = if(input$tz == "local") {
-               with_tz(date_invoked, Sys.timezone())
+      # maestro.log encodé nativement en Local
+      mutate(event_time = str_remove_all(event_time, "\\..*"),
+             event_time = as_datetime(event_time, tz = Sys.timezone()),
+             event_time = if(input$tz == "Local") {
+               event_time # stay local
              } else { 
-               date_invoked
+               with_tz(event_time, "UTC")
              }
       )
     
-    df <- left_join(logs, maestro, by = c("pipe_name", "date_invoked"))
+    #  les warn/info/erreurs ne se lancent pas tous sur le même timing (debut, fin)
+    df <- logs %>% 
+      left_join(maestro , by = c("pipe_name", "date_invoked"     = "event_time")) %>%
+      left_join(maestro , by = c("pipe_name", "pipeline_started" = "event_time") ) %>%
+      left_join(maestro , by = c("pipe_name", "pipeline_ended"   = "event_time")) 
     
+    df2 <- df %>% 
+      unite(mess_invoked, type.x, output.x, sep = " : ", na.rm = TRUE) %>%
+      unite(mess_start, type.y, output.y, sep = " : ", na.rm = TRUE) %>%
+      unite(mess_end, type, output, sep = " : ", na.rm = TRUE) 
     
+    df3 <- df2 %>%
+      mutate(row = row_number()) %>%       # keep identity to rejoin later
+      pivot_longer(cols = starts_with("mess_"),
+                   names_to = "when",
+                   values_to = "msg") %>%
+      mutate(
+        msg = str_trim(msg),
+        msg = na_if(msg, ""),          # turn empty strings into NA
+        level = str_extract(msg, "^(INFO|WARNING|ERROR)"),     # extract level
+        message = str_remove(msg, "^(INFO|WARNING|ERROR)\\s*:\\s*") # remove "INFO :"
+      ) %>%
+      select(-c(when, msg)) %>%
+      unique() %>%
+      complete(level = c("INFO","WARNING","ERROR")) %>%
+      pivot_wider(names_from = level,
+                  values_from = message,
+                  values_fn = ~ paste(., collapse = " | "), # collapse if multiple per level
+                  values_fill = NA) %>%
+      filter(!is.na(pipe_name)) %>%
+      arrange(row) %>%
+      select(-row) %>%
+      relocate(c("INFO","WARNING", "ERROR"), .before = next_run) 
+    
+
     # Process the data
-    df <- df %>%
+    df4 <- df3 %>%
       mutate(
         status = case_when(
           !invoked ~ "not_run",
@@ -300,24 +330,57 @@ server <- function(input, output, session) {
         duration = ifelse(!is.na(pipeline_started) & !is.na(pipeline_ended),
                          as.numeric(difftime(pipeline_ended, pipeline_started, units = "secs")),
                          NA),
+        duration_s = hms::as_hms(duration),
         run_date = as.Date(pipeline_started, format = "%Y-%m-%dT%H:%M:%SZ")
       )
     
-    return(df)
+    return(df4)
   })
   
   
   
-  
+  ############## UI 
   
   # Update pipeline filter choices
+  output$sidebar_inputs <- renderUI({
+    req(input$tabs) # ensure a tab is selected
+    switch(input$tabs,
+           dashboard = pickerInput("status_filter", "Status:",
+                                   choices = list("Success" = "success", "Failed" = "failed"),
+                                   multiple = TRUE,
+                                   selected = c("success","failed")),
+           runs = pickerInput("status_filter", "Status:",
+                              choices = list("Success" = "success", "Failed" = "failed", "Not Run" = "not_run"),
+                              multiple = TRUE,
+                              selected = c("success","failed")),
+           # Si autre tabItem non défini ici
+           NULL
+    )
+  })
+  
+  
+  
   observe({
     df <- logs_data()
     choices <- sort(unique(df$pipe_name))
-    updateSelectInput(session, "pipeline_filter", 
+    updatePickerInput(session, "pipeline_filter", 
                      choices = setNames(choices, choices),
                      selected = choices)
   })
+  
+  
+  
+  ######################## FIN UI
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -390,57 +453,8 @@ server <- function(input, output, session) {
   })
   
   
-  ###### STATUS PLOT
-  
-  # 
-  # output$status_chart <- renderPlotly({
-  #   # Data
-  #  df <- filtered_data() %>%
-  #     mutate(
-  #       day = as_date(date_invoked),
-  #       time = hms::as_hms(date_invoked),
-  #       duration_s = hms::as_hms(duration)
-  #     )
-  # 
-  #   p <- df %>%
-  #     ggplot(aes(x = pipeline_started,
-  #                y = duration_s,
-  #                color = status,
-  #                text = paste0(
-  #                  "started on : ", pipeline_started, " -",input$tz,
-  #                  "- for ", duration_s
-  #                  )
-  #     )) +
-  #     geom_point(position = "identity", size = 2, alpha = 0.8) +
-  #     scale_x_datetime() +
-  #     scale_y_time(
-  #       breaks = get_hms_breaks(df$duration_s)
-  #     ) +
-  #     scale_color_manual(values = c(success = "#00a65a", failed = "#d83b01")) +
-  #     labs(x = "Date",
-  #          y = "Duration (HH:MM:SS)") + 
-  #     facet_wrap(vars(pipe_name), shrink = FALSE) +
-  #     theme_minimal() +
-  #     custom_theme
-  #   
-  #   
-  #   # set plot height
-  #   num_panels <- length(unique(ggplot_build(p)$data[[1]]$PANEL)) # get number of panels
-  #   num_rows <- wrap_dims(num_panels)[1] # get number of rows
-  #   he <- num_rows
-  #   
-  #   # PLOT
-  #   p <- ggplotly(p, tooltip = "text", height = he*300)
-  #   
-  #   return(p)
-  # })
-  # 
-
 
  
-  
-  
-  
   
   
   # Pipeline cards
@@ -474,49 +488,84 @@ server <- function(input, output, session) {
         status == "failed"  ~ "#dc3545",
         status == "not-run" ~ "#6c757d",
         status == "warning" ~ "#ffc107"
-      )) %>%
+      ),
+      last_time = dplyr::coalesce(pipeline_started, date_invoked, next_run)
+      ) %>%
       ungroup() %>%
-      arrange(pipe_name)
+      arrange(desc(last_time))
     
-    cards <- lapply(1:nrow(latest_status), function(i) {
-      row <- latest_status[i, ]
-      
-      status_class <- paste0("status-", row$status)
-      
-      border_color <- row$status_color
-      
-      
-      div(class = "pipeline-card",
-          style = sprintf("border-left: 4px solid %s;", border_color), 
-          div(class = "pipeline-name", 
-              row$pipe_name),
-          div(class = "pipeline-info",
-              tags$span(class = status_class, style = "padding: 4px 8px; border-radius: 4px; margin-right: 10px;",
-                       toupper(row$label_status)),
-              if (!is.na(row$pipeline_started)) {
-                paste("Last run:", format(row$pipeline_started, "%Y-%m-%d %H:%M"))
-              } else {
-                paste("Next run:", format(row$next_run, "%Y-%m-%d %H:%M"))
+    latest_status <- latest_status %>% slice_head(n = 10)
+    
+    # split into rows of up to 5 items
+    n <- nrow(latest_status)
+    if (n == 0) {
+      return(NULL)
+    }
+    groups <- split(seq_len(n), ceiling(seq_len(n) / 5))
+    row_divs <- lapply(groups, function(idx) {
+      items <- lapply(idx, function(i) {
+        row <- latest_status[i, ]
+        border_color <- row$status_color
+        
+        div(
+          class = "pipeline-card",
+          style = paste0(
+            # made the left border a bit wider
+            "border-left: 6px solid ", border_color, ";",
+            "padding: 10px;",
+            "background: #fff;",
+            "border-radius: 4px;",
+            "box-shadow: 0 1px 2px rgba(0,0,0,0.04);",
+            # fixed basis and no grow so cards don't stretch when fewer items are present
+            "flex: 0 0 18%;",
+            "min-width: 140px;"
+          ),
+          div(class = "pipeline-name", style = "font-weight: 600; margin-bottom: 6px;", row$pipe_name),
+          div(
+            class = "pipeline-info",
+            if (!is.na(row$pipeline_started)) {
+              paste("Last run:", format(row$pipeline_started, "%Y-%m-%d %H:%M"))
+            } else {
+              paste("Next run:", format(row$next_run, "%Y-%m-%d %H:%M"))
+            },
+            # errors and warnings
+            if (!is.na(row$errors) && row$errors > 0) {
+              tags$span(style = "color: #dc3545 ; margin-left: 10px;", paste("Errors:", row$errors))
               },
-              if (row$errors > 0) tags$span(style = "color: #dc3545; margin-left: 10px;", paste("Errors:", row$errors)),
-              if (row$warnings > 0) tags$span(style = "color: #ffc107; margin-left: 10px;", paste("Warnings:", row$warnings))
+            if (!is.na(row$warnings) && row$warnings > 0){ 
+              tags$span(style = "color: #ffc107; margin-left: 10px;", paste("Warnings:", row$warnings))
+              }
           )
+        )
+      })
+      
+      # if this row has fewer than 5 items, center them; otherwise left-align
+      row_justify <- if (length(idx) < 5) "left" else "flex-start"
+      row_style <- paste0("display: flex; gap: 12px; margin-bottom: 12px; align-items: stretch; justify-content: ", row_justify, ";")
+      
+      div(
+        class = "pipeline-row",
+        style = row_style,
+        do.call(tagList, items)
       )
     })
     
-    do.call(tagList, cards)
+    do.call(tagList, row_divs)
+    
   })
   
   # Runs table
   output$runs_table <- DT::renderDataTable({
     df <- filtered_data() %>%
-      select(pipe_name, status, date_invoked, pipeline_started, pipeline_ended, duration, errors, warnings, messages, output, next_run) %>%
+      select(pipe_name, status, date_invoked, pipeline_started, pipeline_ended, 
+             duration = duration_s,
+             INFO, WARNING, ERROR, next_run
+             ) %>%
       mutate(
         pipeline_started = format(pipeline_started, "%Y-%m-%d %H:%M:%S"),
         pipeline_ended = format(pipeline_ended, "%Y-%m-%d %H:%M:%S"),
         next_run = format(next_run, "%Y-%m-%d %H:%M:%S"),
-        date_invoked = format(date_invoked, "%Y-%m-%d %H:%M:%S"),
-        duration = ifelse(!is.na(duration), paste(round(duration, 2), "sec"), "")
+        date_invoked = format(date_invoked, "%Y-%m-%d %H:%M:%S")
       ) %>%
       arrange(desc(date_invoked), pipe_name)
     
@@ -536,13 +585,12 @@ server <- function(input, output, session) {
   
   
   output$timeviz <- renderTimevis({
-    
+
     df_time <- filtered_data() %>%
       filter(!status == "not_run") %>%
       mutate(
         start = pipeline_started,
         end = pipeline_ended,
-        duration_s = hms::as_hms(duration),
         type = ifelse(
           !is.na(pipeline_ended),
           "range",
@@ -580,8 +628,16 @@ server <- function(input, output, session) {
     ) %>%
       arrange(content)
     
+    diff_timezone <- difftime( force_tz(now(),"UTC"), now() , units = "hours")  %>% as.numeric()
     
-    timevis(df_time, groups = groups) %>%
+    timevis(df_time, 
+            groups = groups,
+            timezone = if(input$tz == "Local"){
+              diff_timezone
+            } else if(input$tz == "UTC"){
+              0
+            } 
+    ) %>%
       setWindow(Sys.Date() -7, Sys.Date() +1)
     
     

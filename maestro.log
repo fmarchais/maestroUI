@@ -1,0 +1,93 @@
+[Check Databases] [WARN] [2025-10-30 10:00:14.638039]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-10-30 10:00:26.700164]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-10-30 10:00:51.86167]: Exécution terminée
+[Api call] [INFO] [2025-10-30 12:00:14.187379]: Exécution terminée
+[Api call] [INFO] [2025-10-30 17:00:14.779586]: Exécution terminée
+[Newsletter] [INFO] [2025-10-30 18:00:14.54726]: Exécution terminée
+[Data Quality] [INFO] [2025-10-30 19:00:14.646154]: Exécution terminée
+[ETL] [INFO] [2025-10-30 22:00:27.628858]: Exécution terminée
+[Api call] [WARN] [2025-10-31 00:00:14.583048]: Aucune nouvelle donnée récupérée
+[Api call] [WARN] [2025-10-31 06:00:14.552775]: Aucune nouvelle donnée récupérée
+[Diagnostic EDS] [INFO] [2025-10-31 08:00:02.643078]: source et packages
+[Diagnostic EDS] [INFO] [2025-10-31 08:00:06.576267]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-10-31 08:00:06.729667]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-10-31 08:00:21.75338]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-10-31 08:00:36.775651]: Terminé
+[Check Databases] [WARN] [2025-10-31 10:00:14.75392]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-10-31 10:00:26.826968]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-10-31 10:00:51.952381]: Exécution terminée
+[Api call] [INFO] [2025-10-31 12:00:14.089713]: Exécution terminée
+[Api call] [INFO] [2025-10-31 17:00:14.721778]: Exécution terminée
+[Newsletter] [INFO] [2025-10-31 18:00:14.598041]: Exécution terminée
+[Data Quality] [INFO] [2025-10-31 19:00:14.610541]: Exécution terminée
+[ETL] [INFO] [2025-10-31 22:00:27.596265]: Exécution terminée
+[Api call] [ERROR] [2025-11-01 00:00:14.600558]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-01 06:00:17.769938]: Error : token is not recognized
+[Diagnostic EDS] [INFO] [2025-11-01 08:00:02.713333]: source et packages
+[Diagnostic EDS] [INFO] [2025-11-01 08:00:05.070343]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-11-01 08:00:05.234807]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-11-01 08:00:20.259594]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-11-01 08:00:35.286416]: Terminé
+[Check Databases] [WARN] [2025-11-01 10:00:14.580471]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-11-01 10:00:26.654726]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-11-01 10:00:51.781801]: Exécution terminée
+[Api call] [ERROR] [2025-11-01 12:00:14.080049]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-01 17:00:14.652044]: Error : token is not recognized
+[Newsletter] [INFO] [2025-11-01 18:00:14.769632]: Exécution terminée
+[Data Quality] [INFO] [2025-11-01 19:00:14.58217]: Exécution terminée
+[ETL] [INFO] [2025-11-01 22:00:27.680688]: Exécution terminée
+[Api call] [ERROR] [2025-11-02 00:00:14.643733]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-02 06:00:14.489111]: Error : token is not recognized
+[Diagnostic EDS] [INFO] [2025-11-02 08:00:05.524611]: source et packages
+[Diagnostic EDS] [INFO] [2025-11-02 08:00:07.970806]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-11-02 08:00:08.130503]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-11-02 08:00:23.154212]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-11-02 08:00:38.178724]: Terminé
+[Check Databases] [WARN] [2025-11-02 10:00:14.68227]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-11-02 10:00:26.781949]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-11-02 10:00:51.950278]: Exécution terminée
+[Api call] [ERROR] [2025-11-02 12:00:14.14468]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-02 17:00:14.607628]: Error : token is not recognized
+[Newsletter] [INFO] [2025-11-02 18:00:14.631945]: Exécution terminée
+[Data Quality] [INFO] [2025-11-02 19:00:14.530444]: Exécution terminée
+[ETL] [INFO] [2025-11-02 22:00:27.669606]: Exécution terminée
+[Api call] [ERROR] [2025-11-03 00:00:14.482896]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-03 06:00:14.642149]: Error : token is not recognized
+[Api Redcap] [ERROR] [2025-11-03 08:00:14.584346]: Error : token is not recognized
+[Diagnostic EDS] [INFO] [2025-11-03 08:00:14.646633]: source et packages
+[Diagnostic EDS] [INFO] [2025-11-03 08:00:15.401255]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-11-03 08:00:15.467035]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-11-03 08:00:30.491653]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-11-03 08:00:45.515695]: Terminé
+[Check Databases] [WARN] [2025-11-03 10:00:18.933386]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-11-03 10:00:31.020614]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-11-03 10:00:56.15543]: Exécution terminée
+[Api call] [ERROR] [2025-11-03 12:00:15.799736]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-03 17:00:16.328224]: Error : token is not recognized
+[Newsletter] [INFO] [2025-11-03 18:00:15.164013]: Exécution terminée
+[Data Quality] [INFO] [2025-11-03 19:00:14.617868]: Exécution terminée
+[ETL] [INFO] [2025-11-03 22:00:27.580835]: Exécution terminée
+[Api call] [ERROR] [2025-11-04 00:00:14.441421]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-04 06:00:14.625024]: Error : token is not recognized
+[Api Redcap] [ERROR] [2025-11-04 08:00:14.498348]: Error : token is not recognized
+[Diagnostic EDS] [INFO] [2025-11-04 08:00:14.566224]: source et packages
+[Diagnostic EDS] [INFO] [2025-11-04 08:00:15.491822]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-11-04 08:00:15.554786]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-11-04 08:00:30.580098]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-11-04 08:00:45.606329]: Terminé
+[Check Databases] [WARN] [2025-11-04 10:00:14.797528]: Aucune nouvelle donnée récupérée
+[Data Quality] [WARN] [2025-11-04 10:00:26.898264]: Aucune nouvelle donnée récupérée
+[ETL] [INFO] [2025-11-04 10:00:52.034952]: Exécution terminée
+[Api call] [ERROR] [2025-11-04 12:00:17.486223]: Error : token is not recognized
+[Api call] [ERROR] [2025-11-04 17:00:15.348226]: Error : token is not recognized
+[Newsletter] [INFO] [2025-11-04 18:00:14.689223]: Exécution terminée
+[Data Quality] [INFO] [2025-11-04 19:00:14.653963]: Exécution terminée
+[ETL] [INFO] [2025-11-04 22:00:27.631472]: Exécution terminée
+[Api call] [WARN] [2025-11-05 00:00:14.599124]: Aucune nouvelle donnée récupérée
+[Api call] [WARN] [2025-11-05 06:00:14.796595]: Aucune nouvelle donnée récupérée
+[Api Redcap] [ERROR] [2025-11-05 08:00:14.597981]: Error : token is not recognized
+[Diagnostic EDS] [INFO] [2025-11-05 08:00:14.661132]: source et packages
+[Diagnostic EDS] [INFO] [2025-11-05 08:00:15.302947]: Connexion EDS
+[Diagnostic EDS] [INFO] [2025-11-05 08:00:15.370714]: Lancement des tests
+[Diagnostic EDS] [INFO] [2025-11-05 08:00:30.398402]: Génération du rapport
+[Diagnostic EDS] [INFO] [2025-11-05 08:00:45.42587]: Terminé
