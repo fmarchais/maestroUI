@@ -252,54 +252,47 @@ server <- function(input, output, session) {
   # Load and process data
   logs_data <- reactive({
     # Load the CSV file
-    logs <- read.csv("logs.csv", stringsAsFactors = FALSE) %>%
-      # Ensure consistent UTC handling for all timestamp columns
-      mutate(across(
+    logs <- read.csv("D:/R/Portfolio/maestro/maestro_dev/logs.csv", stringsAsFactors = FALSE) %>%
+      # logs nativement en UTC
+      mutate_at( 
         c("pipeline_started", "pipeline_ended", "next_run", "date_invoked"),
-        ~ force_tz(as_datetime(.), "UTC")
-      )) %>%
-      # Convert to local time if requested
-      mutate(across(
+        ~ as_datetime(., "UTC")
+      )  %>%
+      mutate_at(
         c("pipeline_started", "pipeline_ended", "next_run", "date_invoked"),
         ~ if(input$tz == "Local") {
-          with_tz(., Sys.timezone())
+          with_tz(., tz = Sys.timezone()) # local tz
         } else {
-          force_tz(., "UTC")  # Ensure UTC
+          . # stay UTC
         }
-      ))
+      )
     
-    # Process maestro.log with explicit timezone handling
     maestro <- read_delim(
-      "maestro.log", 
+      "D:/R/Portfolio/maestro/maestro_dev/maestro.log", 
       delim = "]", 
       col_names = c("pipe_name","type","event_time","output")
     ) %>%
       mutate_all(~ str_squish(str_remove_all(., "\\[|\\:"))) %>%
-      mutate(
-        # Remove milliseconds and standardize timezone handling
-        event_time = str_remove_all(event_time, "\\..*"),
-        # First parse as UTC to avoid system timezone assumptions
-        event_time = as_datetime(event_time),
-        # Then convert based on user preference
-        event_time = if(input$tz == "Local") {
-          force_tz(event_time, Sys.timezone())
-        } else {
-          force_tz(event_time, "UTC")
-        }
+      # maestro.log encodé nativement en Local
+      mutate(event_time = str_remove_all(event_time, "\\..*"),
+             event_time = as_datetime(event_time, tz = Sys.timezone()),
+             event_time = if(input$tz == "Local") {
+               event_time # stay local
+             } else { 
+               with_tz(event_time, "UTC")
+             }
       )
     
-    # Perform joins with timezone-aware timestamps
+    #  les warn/info/erreurs ne se lancent pas tous sur le même timing (debut, fin)
     df <- logs %>% 
-      left_join(maestro, by = c("pipe_name", "date_invoked" = "event_time")) %>%
-      left_join(maestro, by = c("pipe_name", "pipeline_started" = "event_time")) %>%
-      left_join(maestro, by = c("pipe_name", "pipeline_ended" = "event_time"))
+      left_join(maestro , by = c("pipe_name", "date_invoked"     = "event_time")) %>%
+      left_join(maestro , by = c("pipe_name", "pipeline_started" = "event_time") ) %>%
+      left_join(maestro , by = c("pipe_name", "pipeline_ended"   = "event_time")) 
     
-    # Rest of the code remains the same...
     df2 <- df %>% 
       unite(mess_invoked, type.x, output.x, sep = " : ", na.rm = TRUE) %>%
       unite(mess_start, type.y, output.y, sep = " : ", na.rm = TRUE) %>%
-      unite(mess_end, type, output, sep = " : ", na.rm = TRUE)
-    
+      unite(mess_end, type, output, sep = " : ", na.rm = TRUE) 
     df3 <- df2 %>%
       mutate(row = row_number()) %>%       # keep identity to rejoin later
       pivot_longer(cols = starts_with("mess_"),
