@@ -252,7 +252,7 @@ server <- function(input, output, session) {
   # Load and process data
   logs_data <- reactive({
     # Load the CSV file
-    logs <- read.csv("D:/R/Portfolio/maestro/maestro_dev/logs.csv", stringsAsFactors = FALSE) %>%
+    logs <- read.csv("logs.csv", stringsAsFactors = FALSE) %>%
       # logs nativement en UTC
       mutate_at( 
         c("pipeline_started", "pipeline_ended", "next_run", "date_invoked"),
@@ -268,7 +268,7 @@ server <- function(input, output, session) {
       )
     
     maestro <- read_delim(
-      "D:/R/Portfolio/maestro/maestro_dev/maestro.log", 
+      "maestro.log", 
       delim = "]", 
       col_names = c("pipe_name","type","event_time","output")
     ) %>%
